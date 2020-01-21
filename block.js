@@ -1,8 +1,10 @@
-const {GENESIS_DATA,MINE_RATE} = require('./config').GENESIS_DATA;
+const GENESIS_DATA = require('./config').GENESIS_DATA;
+const MINE_RATE=require('./config').MINE_RATE;
 const hextoBinary=require('hex-to-binary');
 const cryptoHash = require('./crypto-hash');
 class Block {
     constructor({ timestamp, lastHash, hash, data, nonce, difficulty }) {
+        // console.log(timestamp,lastHash,hash,nonce,difficulty);
         this.timestamp = timestamp;
         this.lastHash = lastHash;
         this.hash = hash;
@@ -11,7 +13,7 @@ class Block {
         this.difficulty = difficulty;
     }
     static genesis() {
-
+        // console.log("genesis",GENESIS_DATA);
         return new Block(GENESIS_DATA);
         //or return new this(GENESIS_DATA);
         //inside static functions this refers to the class itself
@@ -21,6 +23,7 @@ class Block {
     //nonce originates from number used once
     static mineBlock({ lastBlock, data }) {
         let hash, timestamp;
+        
         // const timestamp=Date.now();
         const lastHash = lastBlock.hash;
         let difficulty = lastBlock.difficulty;

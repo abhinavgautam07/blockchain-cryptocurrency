@@ -1,4 +1,5 @@
 const Block = require('./block');
+console.log('file calling');
 const cryptoHash = require('./crypto-hash');
 class Blockchain {
     constructor() {
@@ -7,7 +8,7 @@ class Blockchain {
     addBlock(data) {
         const newBlock = Block.mineBlock({
             lastBlock: this.chain[this.chain.length - 1],
-            data: data.data
+            data: data
         });
 
         this.chain.push(newBlock);
