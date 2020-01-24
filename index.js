@@ -24,15 +24,26 @@ app.post('/api/mine', (req, res) => {
 });
 
 app.post('/api/transact', (req, res) => {
-    const { recipient, amount } = req.body;
+    let { recipient, amount } = req.body;
+    amount=parseFloat(amount);
+    let transaction = transactionPool.existingTransaction({ inputAddress: wallet.publicKey });
+    try {
+        if (transaction) {
+            transaction.update({ senderWallet: wallet, recipient, amount });
+        } else {
+            transaction = wallet.createtransaction({ recipient, amount });
+        }
 
-    const transaction = wallet.createtransaction({ recipient, amount });
+        //    console.log('wallet',wallet);
+
+    } catch (e) {
+
+        return res.status(400).json({ type: 'error', message: e.message });
+    }
+
     transactionPool.setTransaction(transaction);
-
-
-    console.log('transaction pool', transactionPool);
-
-    res.json({ transaction });
+    // console.log('transaction pool', transactionPool);
+    return res.status(200).json({ type: 'success', transaction });
 
 });
 //when the new peer joins he requests the root node to give him the lastest version of blockchain
