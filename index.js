@@ -1,9 +1,13 @@
 const express = require('express');
-const Blockchain = require('./blockchain');
-const PubSub = require('./pubsub');
+const Blockchain = require('./blockchain/blockchain');
+const PubSub = require('./config/pubsub');
+const TransactionPool = require('./wallet/transaction-pool');
+const Wallet = require('./wallet/wallet');
 const app = express();
 const request = require('request');
 const blockchain = new Blockchain();
+const transactionPool = new TransactionPool();
+const wallet = new Wallet();
 const pubsub = new PubSub({ blockchain });
 const DEFAULT_PORT = 3000;
 const ROOT_NODE_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
@@ -18,14 +22,27 @@ app.post('/api/mine', (req, res) => {
     pubsub.broadcastChain();
     res.redirect('/api/blocks');
 });
+
+app.post('/api/transact', (req, res) => {
+    const { recipient, amount } = req.body;
+
+    const transaction = wallet.createtransaction({ recipient, amount });
+    transactionPool.setTransaction(transaction);
+
+
+    console.log('transaction pool', transactionPool);
+
+    res.json({ transaction });
+
+});
 //when the new peer joins he requests the root node to give him the lastest version of blockchain
 const syncChain = () => {
     request({ url: `${ROOT_NODE_ADDRESS}/api/blocks` }, (error, response, body) => {
         console.log('this request')
-        
+
         if (!error && response.statusCode === 200) {
             const rootChain = JSON.parse(body);
-            console.log('replace chai with sync on',rootChain);
+            console.log('replace chain with sync on', rootChain);
             blockchain.replaceChain(rootChain);
         }
     });
@@ -39,7 +56,7 @@ if (process.env.GENERATE_PEER_PORT == 'true') {
 }
 const PORT = PEER_PORT || DEFAULT_PORT;
 app.listen(PORT, () => {
-    if(PORT!==DEFAULT_PORT){
+    if (PORT !== DEFAULT_PORT) {
         syncChain();
     }
     console.log(`listening on the port:${PORT}`);
