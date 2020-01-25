@@ -18,14 +18,14 @@ app.get('/api/blocks', (req, res) => {
 });
 app.post('/api/mine', (req, res) => {
 
-    blockchain.addBlock(req.body.data);
-    pubsub.broadcastChain();
+    blockchain.addBlock(req.body.data); //here making changes in my instance of blockchain
+    pubsub.broadcastChain(); //here  asking the others who will receive message to make chain in their instances
     res.redirect('/api/blocks');
 });
 
 app.post('/api/transact', (req, res) => {
     let { recipient, amount } = req.body;
-    amount=parseFloat(amount);
+    amount = parseFloat(amount);
     let transaction = transactionPool.existingTransaction({ inputAddress: wallet.publicKey });
     try {
         if (transaction) {
@@ -41,20 +41,37 @@ app.post('/api/transact', (req, res) => {
         return res.status(400).json({ type: 'error', message: e.message });
     }
 
-    transactionPool.setTransaction(transaction);
+    transactionPool.setTransaction(transaction); //making change in my own instance of pool
+    pubsub.broadcastTransaction(transaction);  //asking the others who will receive the  message to make change in their instances.
     // console.log('transaction pool', transactionPool);
     return res.status(200).json({ type: 'success', transaction });
 
 });
+
+
+app.get('/api/transaction-pool-map', (req, res) => {
+
+    res.json(transactionPool.transactionMap);
+})
 //when the new peer joins he requests the root node to give him the lastest version of blockchain
-const syncChain = () => {
+
+const syncWithRoot = () => {
     request({ url: `${ROOT_NODE_ADDRESS}/api/blocks` }, (error, response, body) => {
-        console.log('this request')
+
 
         if (!error && response.statusCode === 200) {
             const rootChain = JSON.parse(body);
-            console.log('replace chain with sync on', rootChain);
+            // console.log('replace chain with sync on', rootChain);
             blockchain.replaceChain(rootChain);
+        }
+    });
+
+    request({ url: `${ROOT_NODE_ADDRESS}/api/transaction-pool-map` }, (error, response, body) => {
+
+        if (!error && response.statusCode === 200) {
+
+            const rootPoolMap = JSON.parse(body);
+            transactionPool.setMap({ newMap: rootPoolMap });
         }
     });
 }
@@ -68,7 +85,7 @@ if (process.env.GENERATE_PEER_PORT == 'true') {
 const PORT = PEER_PORT || DEFAULT_PORT;
 app.listen(PORT, () => {
     if (PORT !== DEFAULT_PORT) {
-        syncChain();
+        syncWithRoot();
     }
     console.log(`listening on the port:${PORT}`);
 });
