@@ -41,11 +41,14 @@ class Blockchain {
 
         return true;
     }
-    replaceChain(newChain) {
+    replaceChain(newChain, onSuccess) {
         if (newChain.length <= this.chain.length) return;
 
         if (!Blockchain.isValidChain(newChain)) return;
 
+        if (onSuccess) {
+            onSuccess();
+        }
         this.chain = newChain;
         return;
     }

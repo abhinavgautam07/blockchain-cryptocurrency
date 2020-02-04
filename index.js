@@ -3,12 +3,14 @@ const Blockchain = require('./blockchain/blockchain');
 const PubSub = require('./config/pubsub');
 const TransactionPool = require('./wallet/transaction-pool');
 const Wallet = require('./wallet/wallet');
+const TransactionMiner = require('./wallet/transaction_miner');
 const app = express();
 const request = require('request');
 const blockchain = new Blockchain();
 const transactionPool = new TransactionPool();
 const wallet = new Wallet();
-const pubsub = new PubSub({ blockchain });
+const pubsub = new PubSub({ blockchain, transactionPool });
+const transactionMiner = new TransactionMiner({ blockchain, transactionPool, wallet, pubsub });
 const DEFAULT_PORT = 3000;
 const ROOT_NODE_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
 app.use(express.urlencoded());
@@ -19,7 +21,7 @@ app.get('/api/blocks', (req, res) => {
 app.post('/api/mine', (req, res) => {
 
     blockchain.addBlock(req.body.data); //here making changes in my instance of blockchain
-    pubsub.broadcastChain(); //here  asking the others who will receive message to make chain in their instances
+    pubsub.broadcastChain(); //here we are asking the others who will receive message to make chain in their instances
     res.redirect('/api/blocks');
 });
 
@@ -31,7 +33,7 @@ app.post('/api/transact', (req, res) => {
         if (transaction) {
             transaction.update({ senderWallet: wallet, recipient, amount });
         } else {
-            transaction = wallet.createtransaction({ recipient, amount });
+            transaction = wallet.createtransaction({ recipient, amount, chain: blockchain.chain });
         }
 
         //    console.log('wallet',wallet);
@@ -54,7 +56,12 @@ app.get('/api/transaction-pool-map', (req, res) => {
     res.json(transactionPool.transactionMap);
 })
 //when the new peer joins he requests the root node to give him the lastest version of blockchain
+app.get('/api/mine-transactions', (req, res) => {
 
+    transactionMiner.mineTransactions();
+    res.redirect('/api/blocks');
+
+});
 const syncWithRoot = () => {
     request({ url: `${ROOT_NODE_ADDRESS}/api/blocks` }, (error, response, body) => {
 

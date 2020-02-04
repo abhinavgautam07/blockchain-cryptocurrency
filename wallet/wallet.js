@@ -21,18 +21,43 @@ class Wallet {
         return this.keyPair.sign(cryptoHash(data));
     }
 
-    createtransaction({ recipient, amount }) {
+    createtransaction({ recipient, amount, chain }) {
 
+        if (chain) {
+            this.balance = Wallet.calculateBalance({
+                chain,
+                address: this.publicKey
+            });
+        }
         if (amount > this.balance) {
 
             throw new Error('Not enough funds');
-            
-        }else{
-            
-        return new Transaction({ senderWallet: this, recipient, amount });
+
+        } else {
+
+            return new Transaction({ senderWallet: this, recipient, amount });
         }
 
 
+    }
+    static calculateBalance({ chain, address }) {
+        let outputTotal = 0;
+        for (let i = 1; i < chain.length; i++) {
+
+            const block = chain[i];
+            for (const transaction of block.data) {
+
+                let outputAddress = transaction.outputMap[address];
+
+                if (outputAddress) {
+                    outputTotal += outputAddress;
+                }
+
+            }
+
+        }
+
+        return STARTING_BALANCE + outputTotal;
     }
 }
 
