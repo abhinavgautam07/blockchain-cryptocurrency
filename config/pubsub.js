@@ -4,11 +4,13 @@ const CHANNELS = {
     BLOCKCHAIN: 'BLOCKCHAIN',
     TRANSACTION: 'TRANSACTION'
 };
+
 //when one instance of block chain adds new block it is his duty to broadcast this message about the new block addition
 //by instance we mean a publisher or sunscriber
 //each one have their own copy of blockchain.
+
 class PubSub {
-    constructor({ blockchain, transactionPool }) {
+    constructor({blockchain,transactionPool}) {
         //every instance of pubsub will have a local blockchain
         this.blockchain = blockchain;
         this.transactionPool = transactionPool;
@@ -18,6 +20,8 @@ class PubSub {
 
         this.susbcribeToChannels();
 
+//on message is a default event emitted for other clients when someone publishes(i.e this.publish is called)
+//any message
         this.subscriber.on(
             'message', (channel, message) => {
                 this.handleMessage(channel, message);
@@ -78,4 +82,6 @@ class PubSub {
         });
     }
 }
+
+
 module.exports = PubSub;

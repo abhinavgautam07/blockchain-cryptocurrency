@@ -1,6 +1,7 @@
 const Blockchain = require('./blockchain');
 const Block = require('./block');
 
+
 describe('blockchain', () => {
     let blockchain;
     beforeEach(() => {
@@ -34,21 +35,21 @@ describe('blockchain', () => {
             });
             describe('and lastHash refernce has changed', () => {
                 it('returns false', () => {
-                   
+
                     blockchain.chain[2].lastHash = 'broken-hash';
                     expect(Blockchain.isValidChain(blockchain.chain)).toBe(false);
                 });
             });
             describe('and chain contains a block with invalid field', () => {
                 it('returns false', () => {
-                    
+
                     blockchain.chain[2].data = 'bad-data';
                     expect(Blockchain.isValidChain(blockchain.chain)).toBe(false);
                 });
             });
             describe('and chain does not contain any invalid block', () => {
                 it('returns true', () => {
-              
+
                     expect(Blockchain.isValidChain(blockchain.chain)).toBe(true);
 
                 });
@@ -58,5 +59,3 @@ describe('blockchain', () => {
 
     });
 });
-
-

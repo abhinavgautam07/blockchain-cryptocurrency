@@ -1,10 +1,23 @@
 const STARTING_BALANCE = require('../config/config').STARTING_BALANCE;
-const ec = require('../utilities/elliptic').ec;
+const {ec} = require('../utilities/elliptic');
 const cryptoHash = require('../utilities/crypto-hash');
 const Transaction = require('./transactions');
-// whatever is encrypted with a public key may only be decrypted by its corresponding private key and vice versa.
-// For example, if Bob wants to send sensitive data to Alice, and wants to be sure that only Alice may be able to read it, he will encrypt the data with Alice's Public Key. Only Alice has access to her corresponding Private Key and as a result is the only person with the capability of decrypting the encrypted data back into its original form.
-// For example, if Bob wants to send sensitive data to Alice, and wants to be sure that only Alice may be able to read it, he will encrypt the data with Alice's Public Key. Only Alice has access to her corresponding Private Key and as a result is the only person with the capability of decrypting the encrypted data back into its original form.
+
+/*the thing about asymmetric cryptography is that..if encrypted using private key can be decrypted with public key only
+and if encrypted using using public can be decrypted with private key only
+
+
+a peer's public key is known to every other peer,but private key is available to peer  only
+
+so a message is encrypted using reciver's public key so that only receiver can decrypt it with his private key
+
+--------authentication--------
+but along with secrecy we need authentication that is the person who has sent the message is known and verified
+so for this sender has to sign the encrypted message with his private key...so that reciver can verify it using sender's public key(as public key is available with everyone).
+
+address of a wallet is its public key
+using this address other peers can send currency to the peer whose wallet is this..
+*/
 class Wallet {
 
     constructor() {
@@ -16,7 +29,8 @@ class Wallet {
 
     }
     sign(data) {
-        //signature done using privatekey as well and the keypair has private key
+        //signature done using privatekey  and the keypair has sign function
+        
         //also sign method works optimally on the hashed data
         return this.keyPair.sign(cryptoHash(data));
     }
@@ -42,11 +56,14 @@ class Wallet {
     }
     static calculateBalance({ chain, address }) {
         let outputTotal = 0;
-        for (let i = 1; i < chain.length; i++) {
+        let hasMadeTransaction=false;
+        for (let i =chain.length; i >0; i--) {
 
             const block = chain[i];
             for (const transaction of block.data) {
-
+                if(transaction.input.address===address){
+                    hasMadeTransaction=true;
+                }
                 let outputAddress = transaction.outputMap[address];
 
                 if (outputAddress) {
@@ -54,10 +71,12 @@ class Wallet {
                 }
 
             }
-
+            if(hasMadeTransaction){
+                break;
+            }
         }
 
-        return STARTING_BALANCE + outputTotal;
+        return hasMadeTransaction? outputTotal: STARTING_BALANCE + outputTotal;
     }
 }
 
@@ -74,5 +93,5 @@ module.exports = Wallet;
 
 //for verification of signature what is done that the data from the signature is obtained and matched with the incoming data.
 
-//for picture understanding see DigitalSignature.docx in documents
+
 
